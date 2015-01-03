@@ -17,21 +17,14 @@ on init
     symlink /storage/emulated/legacy /storage/sdcard0
     symlink /mnt/shell/emulated/0 /storage/emulated/legacy
 
-    # USB OTG support
-    mkdir /mnt/media_rw/usbdisk 0700 media_rw media_rw
-    mkdir /storage/usbdisk 0700 root root
-    symlink /storage/usbdisk /mnt/usbdisk
-    symlink /mnt/usbdisk /usbdisk
-    EXPORT SECONDARY_STORAGE /storage/usbdisk
-
 on post-fs
     write /sys/power/gpu_power_on 1
     write /sys/module/input_cfboost/parameters/gpu_wakeup 1
     # Turn on swap
-    swapon_all /fstab.flounder
+    # swapon_all /fstab.flounder
 
     # Swap in only 1 page at a time
-    write /proc/sys/vm/page-cluster 0
+    # write /proc/sys/vm/page-cluster 0
 
 on post-fs-data
     # Now that are booted all the way and out of mount panics, ensure that we panic on later errors.
@@ -131,11 +124,6 @@ on fs
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emulated
     class late_start
-
-# fuse mounted usbdisk daemon running as media_rw (1023)
-service fuse_usbdisk /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d /mnt/media_rw/usbdisk /storage/usbdisk
-    class late_start
-    disabled
 
 service battery_charger /charger
     class charger
