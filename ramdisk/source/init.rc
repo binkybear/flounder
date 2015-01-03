@@ -11,11 +11,12 @@ import /init.${ro.zygote}.rc
 import /init.trace.rc
 
 on early-init
-    # Set init and its forked children's oom_adj.
-    write /proc/1/oom_score_adj -1000
+    #set max GPU frequency
+    write /sys/kernel/tegra_gpu/gpu_cap_rate 900000000
+    write /sys/kernel/tegra_gpu/gpu_cap_state 1
 
-    # Apply strict SELinux checking of PROT_EXEC on mmap/mprotect calls.
-    write /sys/fs/selinux/checkreqprot 0
+    # Set init and its forked children's oom_adj.
+    write /proc/1/oom_score_adj -941
 
     # Set the security context for the init process.
     # This should occur before anything else (e.g. ueventd) is started.
@@ -32,7 +33,7 @@ on early-init
 on init
     sysclktz 0
 
-    loglevel 3
+    loglevel 1
 
     # Backward compatibility
     symlink /system/etc /etc
@@ -222,9 +223,6 @@ on post-fs
     chown system log /proc/last_kmsg
     chmod 0440 /proc/last_kmsg
 
-    # make the selinux kernel policy world-readable
-    chmod 0444 /sys/fs/selinux/policy
-
     # create the lost+found directories, so as to enforce our permissions
     mkdir /cache/lost+found 0770 root root
 
@@ -315,9 +313,6 @@ on post-fs-data
     # Separate location for storing security policy files on data
     mkdir /data/security 0711 system system
 
-    # Reload policy from /data/security if present.
-    setprop selinux.reload_policy 1
-
     # Set SELinux security contexts on upgrade or policy update.
     restorecon_recursive /data
 
@@ -342,9 +337,9 @@ on boot
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
     chown root system /sys/module/lowmemorykiller/parameters/adj
-    chmod 0220 /sys/module/lowmemorykiller/parameters/adj
+    chmod 0777 /sys/module/lowmemorykiller/parameters/adj
     chown root system /sys/module/lowmemorykiller/parameters/minfree
-    chmod 0220 /sys/module/lowmemorykiller/parameters/minfree
+    chmod 0777 /sys/module/lowmemorykiller/parameters/minfree
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
@@ -416,8 +411,6 @@ on boot
 
     # Define default initial receive window size in segments.
     setprop net.tcp.default_init_rwnd 60
-
-    start sysinit
 
     class_start core
 
@@ -565,10 +558,6 @@ service drm /system/bin/drmserver
     user drm
     group drm system inet drmrpc
 
-service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
-    disabled
-    oneshot
-
 service media /system/bin/mediaserver
     class main
     user media
@@ -599,11 +588,6 @@ service bootanim /system/bin/bootanimation
 service installd /system/bin/installd
     class main
     socket installd stream 600 system system
-
-service flash_recovery /system/bin/install-recovery.sh
-    class main
-    #seclabel u:r:install_recovery:s0
-    oneshot
 
 service racoon /system/bin/racoon
     class main
@@ -644,3 +628,10 @@ service pre-recovery /system/bin/uncrypt
     class main
     disabled
     oneshot
+
+service userinit /system/xbin/busybox run-parts /system/etc/init.d
+    oneshot
+    class late_start
+    user root
+    group root
+
