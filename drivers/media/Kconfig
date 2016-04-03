@@ -59,13 +59,6 @@ config MEDIA_RADIO_SUPPORT
 		support radio reception. Disabling this option will
 		disable support for them.
 
-config MEDIA_SDR_SUPPORT
-	bool "Software defined radio support"
-	---help---
-	  Enable software defined radio support.
-
-	  Say Y when you have a software defined radio device.
-
 config MEDIA_RC_SUPPORT
 	bool "Remote Controller support"
 	depends on INPUT
